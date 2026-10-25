@@ -2,8 +2,9 @@
 * text=auto eol=lf
 
 # 下面的规则会覆盖上面的（gitattributes 后写优先）
-*.bat text eol=crlf
-*.cmd text eol=crlf
+# -text：完全不做换行转换，仓库里存的就是 CRLF，这样"Download ZIP"下来也能直接双击
+*.bat -text
+*.cmd -text
 
 # 二进制产物，禁止任何换行转换
 *.dll binary
