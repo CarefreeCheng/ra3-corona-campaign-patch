@@ -1,0 +1,12 @@
+# .bat 必须是 CRLF，否则 cmd 在解析 goto/label 时可能出错
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制产物，禁止任何换行转换
+*.dll binary
+*.exe binary
+*.big binary
+*.lyi binary
+
+# 默认文本文件用 LF
+* text=auto eol=lf
