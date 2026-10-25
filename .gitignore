@@ -1,0 +1,21 @@
+# 日志 / 抓包 / 转储
+*.log
+*.dmp
+*.zip
+
+# 上游组件（不随仓库分发）
+bin/ra3copilot.dll
+tools/
+
+# 编译中间产物
+*.obj
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.res
+
+# 编辑器
+.vs/
+.vscode/
+*.user

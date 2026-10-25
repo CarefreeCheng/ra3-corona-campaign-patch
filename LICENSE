@@ -1,0 +1,38 @@
+MIT License
+
+Copyright (c) 2026 ra3-corona-patch contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## 第三方组件说明 / Third-party notice
+
+本项目**不包含**、也**不重新分发**以下组件：
+
+- `ra3copilot.dll`（Ra3-Copilot，作者 ProbiusOfficial，仓库未声明开源许可）。
+  `install.bat` 会引导用户从上游 Releases 自行下载：
+  https://github.com/ProbiusOfficial/Ra3-Copilot/releases
+  使用该组件需遵守上游项目的条款。
+
+- 《红色警戒 3》及其资料片、日冕 Mod 的任何美术/音频/数据资源。
+  本项目只修改运行中的进程内存，不附带、不修改游戏资源文件。
+
+本仓库自身的代码与文档（`createhook.c` / `xinput_proxy.c` / `ra3fix_helper.cs` /
+`install.bat` / `uninstall.bat` / `docs/`）以上述 MIT 许可发布。

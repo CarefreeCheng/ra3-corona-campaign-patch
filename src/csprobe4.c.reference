@@ -1,0 +1,176 @@
+// csprobe v4 - 0x004DFA70 detour，捕获返回值（= CommandSet）
+//
+//   004DFA70  83 EC 08        sub  esp,8
+//   004DFA73  8B 44 24 0C     mov  eax,[esp+0Ch]   <- 前导共 7 字节
+//   004DFA77  56              push esi
+//   尾部 add esp,8 / ret   （两个出口：004DFAB3 / 004DFAB9）
+//
+// 栈布局（dword，栈顶在左）：
+//   调用前            [ret][a1][a2]
+//   Stub: pop eax     [a1][a2]                  eax = ret
+//         push eax    [ret][a1][a2]
+//         push a2     [a2][ret][a1][a2]
+//         push a1     [a1][a2][ret][a1][a2]
+//         push eax    [ret][a1][a2][ret][a1][a2]
+//         push After  [After][ret][a1][a2][ret][a1][a2]
+//   被调函数看到 ret=After、a1、a2 位置全部正确；其 add esp,8; ret 之后
+//   After 入口：[ret][a1][a2][ret][a1][a2]  -> add esp,12 后 ret 8 即完美返回。
+//
+// 与 v3 的差别（v3 两次闪退都出在这里）：
+//   1) 前导必须 7 字节（v3 用 6，jmp 落进 mov 中间）
+//   2) v3 把参数副本压在返回地址“下面”，被调函数读 [esp+0Ch] 读到的是 a2 而不是 a1
+//   3) 不必保存/恢复 ecx：被调函数自己就把 ecx 当临时寄存器用，调用方不可能依赖它
+//   4) 日志按 (hash, cs) 去重，避免命令栏每帧重建时刷爆磁盘
+#include <windows.h>
+#include <stdio.h>
+
+#define FN_ENTRY   0x004DFA70
+#define FN_BODY    0x004DFA77
+#define PROLOG_LEN 7
+
+static char g_dir[MAX_PATH] = {0};
+static void *g_tramp = NULL;
+static volatile unsigned g_retcs = 0;
+static volatile unsigned g_thing = 0;
+
+#define SEEN 256
+static unsigned g_seenHash[SEEN];
+static unsigned g_seenCs[SEEN];
+static int g_seenN = 0;
+
+static void LogText(const char *s)
+{
+    char path[MAX_PATH];
+    lstrcpyA(path, g_dir);
+    lstrcatA(path, "\\csprobe.log");
+    HANDLE h = CreateFileA(path, FILE_APPEND_DATA, FILE_SHARE_READ, NULL,
+                           OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE) return;
+    DWORD wrote = 0;
+    SetFilePointer(h, 0, NULL, FILE_END);
+    WriteFile(h, s, lstrlenA(s), &wrote, NULL);
+    WriteFile(h, "\r\n", 2, &wrote, NULL);
+    CloseHandle(h);
+}
+
+static unsigned Rd(unsigned addr)
+{
+    if (addr < 0x10000 || addr >= 0x7FFF0000) return 0;
+    if (IsBadReadPtr((void *)addr, 4)) return 0;
+    return *(unsigned *)addr;
+}
+
+static void LogLookup(void)
+{
+    unsigned cs = g_retcs;
+    unsigned thing = g_thing;
+    unsigned type, hash, inner, count, i;
+    char buf[240];
+    SYSTEMTIME st;
+
+    type = Rd(thing + 4);
+    hash = Rd(type + 8);
+    inner = Rd(cs + 4);
+    count = Rd(inner + 4);
+
+    for (i = 0; i < (unsigned)g_seenN; i++)
+        if (g_seenHash[i] == hash && g_seenCs[i] == cs) return;
+    if (g_seenN < SEEN)
+    {
+        g_seenHash[g_seenN] = hash;
+        g_seenCs[g_seenN] = cs;
+        g_seenN++;
+    }
+
+    GetLocalTime(&st);
+    wsprintfA(buf, "%02d:%02d:%02d.%03d thing=0x%08X type=0x%08X hash=0x%08X cs=0x%08X cnt=%u",
+              st.wHour, st.wMinute, st.wSecond, st.wMilliseconds,
+              thing, type, hash, cs, count);
+    LogText(buf);
+}
+
+__declspec(naked) static void AfterCall(void)
+{
+    __asm {
+        mov g_retcs, eax
+        mov eax, dword ptr [esp+4]
+        mov g_thing, eax
+        pushad
+        pushfd
+        call LogLookup
+        popfd
+        popad
+        mov eax, g_retcs
+        add esp, 12
+        ret 8
+    }
+}
+
+__declspec(naked) static void Stub(void)
+{
+    __asm {
+        pop eax                       /* eax = 原始返回地址 */
+        push eax                      /* [ret][a1][a2] */
+        mov ecx, dword ptr [esp+4]    /* a1 */
+        mov edx, dword ptr [esp+8]    /* a2 */
+        push edx
+        push ecx
+        push eax                      /* 给被调函数当返回地址 */
+        push offset AfterCall
+        jmp dword ptr [g_tramp]
+    }
+}
+
+static void PatchJmp(unsigned char *p, void *target)
+{
+    DWORD old = 0;
+    VirtualProtect(p, 8, PAGE_EXECUTE_READWRITE, &old);
+    /* 先写 rel32、最后才写 E9：其他线程若正好在这几条指令上，
+       看到的要么是完整旧指令、要么是完整 jmp，窗口压到纳秒级 */
+    *(int *)(p + 1) = (int)((unsigned char *)target - (p + 5));
+    MemoryBarrier();
+    p[0] = 0xE9;
+    VirtualProtect(p, 8, old, &old);
+    FlushInstructionCache(GetCurrentProcess(), p, 8);
+}
+
+static DWORD WINAPI ProbeThread(LPVOID p)
+{
+    unsigned char *t;
+    (void)p;
+    LogText("[csprobe] v4 install start");
+
+    g_tramp = VirtualAlloc(NULL, 64, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (!g_tramp)
+    {
+        LogText("[csprobe] tramp alloc failed");
+        return 0;
+    }
+    t = (unsigned char *)g_tramp;
+    memcpy(t, (void *)FN_ENTRY, PROLOG_LEN);
+    t[PROLOG_LEN] = 0xE9;
+    *(int *)(t + PROLOG_LEN + 1) = (int)((unsigned char *)FN_BODY - (t + PROLOG_LEN + 5));
+
+    PatchJmp((unsigned char *)FN_ENTRY, (void *)Stub);
+    LogText("[csprobe] v4 detour installed on 004DFA70");
+    return 0;
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved)
+{
+    (void)reserved;
+    if (reason == DLL_PROCESS_ATTACH)
+    {
+        DisableThreadLibraryCalls(hModule);
+        GetModuleFileNameA(hModule, g_dir, MAX_PATH);
+        {
+            char *slash = strrchr(g_dir, '\\');
+            if (slash) *slash = 0;
+        }
+        {
+            HANDLE t = CreateThread(NULL, 0, ProbeThread, NULL, 0, NULL);
+            if (t) CloseHandle(t);
+        }
+    }
+    return TRUE;
+}
