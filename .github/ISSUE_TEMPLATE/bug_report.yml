@@ -1,0 +1,82 @@
+name: 故障报告
+description: 装了之后不生效、游戏闪退、卡关没修好、日志报错等
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。**请先把三个日志的最后 30 行贴上来**，没有日志基本无法定位。
+
+        日志位置（`你的游戏目录` 一般形如 `D:\a game\Red Alert 3`）：
+
+        | 文件 | 作用 |
+        | --- | --- |
+        | `Data\xinput_proxy.log` | 代理是否加载、copilot 是否注入成功、helper 是否起来 |
+        | `Data\createhook.log` | 建筑类型配对表数量、hook 是否装上、每次哈希改写记录 |
+        | `Data\ra3fix_helper.log` | 开关状态、建造按钮替换数、已放置建筑替换数 |
+
+  - type: input
+    id: game-version
+    attributes:
+      label: 游戏版本
+      description: 右键 `Data\ra3_1.12.game` → 属性 → 详细信息 → 文件版本
+      placeholder: "1.12.3444.25830"
+    validations:
+      required: true
+
+  - type: input
+    id: corona-version
+    attributes:
+      label: 日冕版本
+      description: 启动器标题栏或 `Corona\corona_3.xxx.lyi` 的版本号
+      placeholder: "3.259"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: 主要症状
+      options:
+        - 游戏启动即闪退
+        - 游戏能进，但建造页没有扩展建筑
+        - 建筑没有「预充能线圈」等技能
+        - 卡关没修好（目标不推进）
+        - 安装脚本报错 / 双击没反应
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 越具体越好，例如"进苏联第 8 关，打到击杀特使后停住"
+      placeholder: |
+        1. 用日冕启动器进 苏联第 8 关
+        2. 击杀盟军特使
+        3. 目标不推进
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志内容
+      description: 三个日志文件的内容（或最后 30 行）
+      render: text
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 自查
+      options:
+        - label: 我确认是**原版 1.12**（不是起义时刻）
+          required: true
+        - label: 我确认装之前已完全退出日冕（任务管理器里没有 ra3_1.12.game）
+          required: true
+        - label: 我重载过关卡（已放置的老建筑需要重新載入才会换类型）
+          required: true

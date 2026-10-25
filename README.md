@@ -18,6 +18,16 @@
 
 ---
 
+## 效果预览
+
+| 战役建造页 | 预充能线圈 | 卡关修复 |
+|:---:|:---:|:---:|
+| ![战役建造页](docs/images/build-page.png) | ![预充能线圈](docs/images/precharge.png) | ![卡关修复](docs/images/campaign-fix.png) |
+
+> 当前是占位图，替换方法见 [docs/images/README.md](docs/images/README.md)。
+
+---
+
 ## 环境要求
 
 - 红色警戒3 **1.12**（`Data\ra3_1.12.game`，版本号 1.12.3444.25830）

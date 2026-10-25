@@ -1,0 +1,31 @@
+name: 功能建议 / 兼容性反馈
+description: 想加的功能、某个日冕版本不工作、某个关卡还有问题
+title: "[IDEA] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这个项目只做「让日冕下的原版战役能用扩展模式内容」。
+        以下方向已经确认**不做**或**做不了**，请勿重复提：
+
+        - 秘密协议 / 协议栏补全（格位来自玩家模板，开局就固定）
+        - 起义时刻的战役（独立 exe 与数据，日冕写死 1.12）
+        - 联机使用
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你的想法
+      description: 想解决什么问题，期望的表现是什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 补充信息（可选）
+      description: 截图、日志、日冕版本的更新说明链接等
+      render: text
+    validations:
+      required: false

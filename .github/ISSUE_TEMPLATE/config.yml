@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ra3-Copilot（注入框架上游）
+    url: https://github.com/ProbiusOfficial/Ra3-Copilot
+    about: 内存接口、overlay 面板本身的 bug 请报到上游
+  - name: 日冕 Mod 官方
+    url: https://cor-games.com/
+    about: 日冕本体的 bug、版本更新请到官网/官方群反馈
